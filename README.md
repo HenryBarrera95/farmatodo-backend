@@ -286,6 +286,20 @@ En `postman/Farmatodo API.postman_collection.json` tienes una colección para pr
 mvn test
 ```
 
+### Cobertura (JaCoCo)
+
+**Importante:** `docker compose up -d` levanta la app en producción, **no ejecuta tests**. La cobertura se genera únicamente al correr `mvn test`.
+
+**Sin Maven local** (con Docker; excluye tests de integración que requieren Testcontainers):
+```powershell
+docker run --rm -v "${PWD}:/app" -w /app maven:3.9-eclipse-temurin-17 mvn test -Pno-docker "-Djacoco.check.skip=true"
+```
+
+El reporte queda en `target/site/jacoco/index.html`.
+
+- **`-Pno-docker`**: excluye tests con `@Tag("integration")` (Testcontainers) cuando Docker no está disponible en el contenedor.
+- **`-Djacoco.check.skip=true`**: no falla si la cobertura es &lt; 80%.
+
 Incluye:
 - **TokenServiceTest**: unitario de tokenización y rechazo.
 - **TokenIntegrationTest**: integración con Testcontainers (Postgres), POST /tokens, persistencia y logs.
