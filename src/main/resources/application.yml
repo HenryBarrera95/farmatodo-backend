@@ -32,6 +32,8 @@ app:
     min-stock-visible: ${PRODUCT_MIN_STOCK_VISIBLE:0}
   payment:
     retry-count: ${PAYMENT_RETRY_COUNT:3}
+  rate-limit:
+    requests-per-minute: ${RATE_LIMIT_REQUESTS_PER_MINUTE:60}
 
 payment:
   approve-probability: ${PAYMENT_APPROVE_PROBABILITY:0.7}
@@ -42,3 +44,17 @@ payment:
 
 encryption:
   key: ${ENCRYPTION_KEY:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
