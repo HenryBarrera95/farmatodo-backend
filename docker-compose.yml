@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: farmatodo-postgres
+    environment:
+      POSTGRES_DB: farmatodo
+      POSTGRES_USER: farmatodo
+      POSTGRES_PASSWORD: farmatodo_pwd
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U farmatodo -d farmatodo"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  maildev:
+    image: maildev/maildev
+    container_name: farmatodo-maildev
+    ports:
+      - "1025:1025"   # SMTP
+      - "1080:1080"   # Web UI
+
+  app:
+    build: .
+    container_name: farmatodo-app
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      maildev:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/farmatodo
+      SPRING_DATASOURCE_USERNAME: farmatodo
+      SPRING_DATASOURCE_PASSWORD: farmatodo_pwd
+      SPRING_MAIL_HOST: maildev
+      SPRING_MAIL_PORT: "1025"
+
+volumes:
+  postgres_data:

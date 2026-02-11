@@ -1,0 +1,38 @@
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/farmatodo}
+    username: ${SPRING_DATASOURCE_USERNAME:farmatodo}
+    password: ${SPRING_DATASOURCE_PASSWORD:farmatodo_pwd}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+logging:
+  level:
+    root: INFO
+    com.farmatodo: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg [tx=%X{tx_id}]%n"
+
+app:
+  api:
+    key: ${APP_API_KEY:changeme}
+  token:
+    reject-probability: ${TOKEN_REJECT_PROBABILITY:0.0}
+  product:
+    min-stock-visible: ${PRODUCT_MIN_STOCK_VISIBLE:0}
+  payment:
+    retry-count: ${PAYMENT_RETRY_COUNT:3}
+
+encryption:
+  key: ${ENCRYPTION_KEY:}
+
+mail:
+  host: ${SPRING_MAIL_HOST:localhost}
+  port: ${SPRING_MAIL_PORT:1025}
+  username: ${SPRING_MAIL_USERNAME:}
+  password: ${SPRING_MAIL_PASSWORD:}

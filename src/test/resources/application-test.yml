@@ -1,0 +1,5 @@
+# Test profile
+spring:
+  mail:
+    host: localhost
+    port: 1025
