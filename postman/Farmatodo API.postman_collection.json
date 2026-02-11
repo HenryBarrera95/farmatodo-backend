@@ -1,0 +1,358 @@
+{
+  "info": {
+    "name": "Farmatodo API",
+    "description": "Colección con pruebas automatizadas. Usar Collection Runner para ejecutar todo el flujo.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "apiKey", "value": "changeme" },
+    { "key": "customerId", "value": "" },
+    { "key": "tokenId", "value": "" },
+    { "key": "productId", "value": "" },
+    { "key": "uniqueEmail", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Ping",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/ping"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "pm.test('Body is pong', () => pm.expect(pm.response.text()).to.include('pong'));"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Health (custom)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/health"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.test('Status UP', () => pm.expect(j.status).to.eql('UP'));"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Actuator Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/actuator/health"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.test('Has status', () => pm.expect(j).to.have.property('status'));"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Actuator Liveness",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/actuator/health/liveness"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));"],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Actuator Readiness",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/actuator/health/readiness"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));"],
+              "type": "text/javascript"
+            }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "1. Clientes",
+      "item": [
+        {
+          "name": "Create Customer",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.collectionVariables.set('uniqueEmail', 'test' + Date.now() + '@ejemplo.com');"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.test('Tiene id', () => pm.expect(j).to.have.property('id'));",
+                  "pm.test('Tiene email', () => pm.expect(j).to.have.property('email'));",
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('customerId', j.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-API-KEY", "value": "{{apiKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Juan Pérez\",\n  \"email\": \"{{uniqueEmail}}\",\n  \"phone\": \"+573001234567\",\n  \"address\": \"Calle 10 #5-20, Bogotá\"\n}"
+            },
+            "url": "{{baseUrl}}/clients"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Tokens",
+      "item": [
+        {
+          "name": "Create Token",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.test('Tiene token', () => pm.expect(j).to.have.property('token'));",
+                "pm.test('Tiene maskedPan', () => pm.expect(j.maskedPan).to.match(/\\*\\*\\*\\* \\*\\*\\*\\* \\*\\*\\*\\* \\d{4}/));",
+                "if (pm.response.code === 200) { pm.collectionVariables.set('tokenId', j.token); }"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-API-KEY", "value": "{{apiKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cardNumber\": \"4111111111111111\",\n  \"cvv\": \"123\",\n  \"expiryMonth\": \"12\",\n  \"expiryYear\": \"2028\",\n  \"cardHolderName\": \"JOHN DOE\"\n}"
+            },
+            "url": "{{baseUrl}}/tokens"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Productos",
+      "item": [
+        {
+          "name": "Get All Products",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "const arr = pm.response.json();",
+                "pm.test('Array con productos', () => pm.expect(arr).to.be.an('array'));",
+                "if (arr && arr.length > 0) { pm.collectionVariables.set('productId', arr[0].id); }"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "X-API-KEY", "value": "{{apiKey}}" }],
+            "url": "{{baseUrl}}/products"
+          }
+        },
+        {
+          "name": "Get Products (minStock=5)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "X-API-KEY", "value": "{{apiKey}}" }],
+            "url": "{{baseUrl}}/products?minStock=5"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "pm.test('Array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "4. Carrito",
+      "item": [
+        {
+          "name": "Add Item to Cart",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-API-KEY", "value": "{{apiKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 2\n}"
+            },
+            "url": "{{baseUrl}}/carts/items"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                "const j = pm.response.json();",
+                "pm.test('Tiene cartId y items', () => { pm.expect(j).to.have.property('cartId'); pm.expect(j).to.have.property('items'); });"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Get Cart",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "X-API-KEY", "value": "{{apiKey}}" }],
+            "url": "{{baseUrl}}/carts?customerId={{customerId}}"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.test('Tiene total', () => pm.expect(j).to.have.property('total'));"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "5. Pedidos",
+      "item": [
+        {
+          "name": "Create Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-API-KEY", "value": "{{apiKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"deliveryAddress\": \"Calle 10 #5-20, Bogotá\",\n  \"token\": \"{{tokenId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/orders"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                "const j = pm.response.json();",
+                "pm.test('Tiene orderId', () => pm.expect(j).to.have.property('orderId'));",
+                "pm.test('Status PAID o PAYMENT_FAILED', () => pm.expect(['PAID','PAYMENT_FAILED']).to.include(j.status));"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "Errores (pruebas)",
+      "item": [
+        {
+          "name": "401 Sin API Key",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cardNumber\": \"4111111111111111\",\n  \"cvv\": \"123\",\n  \"expiryMonth\": \"12\",\n  \"expiryYear\": \"2028\",\n  \"cardHolderName\": \"JOHN DOE\"\n}"
+            },
+            "url": "{{baseUrl}}/tokens"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": ["pm.test('401 Unauthorized', () => pm.response.to.have.status(401));"],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "400 Validación (email inválido)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-API-KEY", "value": "{{apiKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test\",\n  \"email\": \"email-invalido\",\n  \"phone\": \"+573001234567\",\n  \"address\": \"Calle 1\"\n}"
+            },
+            "url": "{{baseUrl}}/clients"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": ["pm.test('400 Bad Request', () => pm.response.to.have.status(400));"],
+              "type": "text/javascript"
+            }
+          }]
+        }
+      ]
+    }
+  ]
+}

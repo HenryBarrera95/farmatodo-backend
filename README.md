@@ -276,6 +276,10 @@ Todos los endpoints protegidos tienen **rate limiting** (60 req/min por IP por d
 - 400: Carrito vacío, token inválido, stock insuficiente, no hay carrito activo
 - 429: Rate limit excedido
 
+## Colección Postman
+
+En `postman/Farmatodo API.postman_collection.json` tienes una colección para probar todos los endpoints. Importarla en Postman y configurar `apiKey` (igual que `APP_API_KEY` en `.env`). Ver `postman/README.md` para el flujo recomendado.
+
 ## Tests
 
 ```bash

@@ -30,7 +30,17 @@ public class AesEncryptionService implements EncryptionService {
         if (keyBase64 == null || keyBase64.isBlank()) {
             throw new IllegalStateException("ENCRYPTION_KEY must be provided for encryption");
         }
-        byte[] keyBytes = Base64.getDecoder().decode(keyBase64);
+        String trimmed = keyBase64.trim().replaceAll("\\s+", "");
+        byte[] decoded = Base64.getDecoder().decode(trimmed);
+        byte[] keyBytes = decoded.length == 32 ? decoded
+                : decoded.length > 32 ? java.util.Arrays.copyOf(decoded, 32)
+                : decoded.length == 24 ? decoded
+                : decoded.length == 16 ? decoded
+                : null;
+        if (keyBytes == null) {
+            throw new IllegalStateException(
+                    "ENCRYPTION_KEY must decode to 16, 24 or 32 bytes for AES (got " + decoded.length + ")");
+        }
         this.key = new SecretKeySpec(keyBytes, ALGO);
     }
 
