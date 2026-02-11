@@ -2,6 +2,16 @@
 
 Sistema de tokenización de tarjetas de crédito con Spring Boot, PostgreSQL y trazabilidad por transacción.
 
+## Módulos principales
+
+| Módulo | Descripción |
+|--------|-------------|
+| **Tokenización** | Encriptación de datos de tarjeta, token UUID, masked PAN, rechazo por probabilidad |
+| **Orders** | Creación de pedidos desde carrito; estados: `PAYMENT_PENDING`, `PAID`, `PAYMENT_FAILED` |
+| **Payment** | Simulador de pago con probabilidad configurable; integrado en el flujo del pedido |
+| **Retry** | Reintentos automáticos en pago fallido (backoff exponencial); email al fallar definitivamente |
+| **Rate limiting** | Bucket por IP (Bucket4j); 60 req/min por defecto en endpoints protegidos |
+
 ## Requisitos
 
 - Java 17
@@ -61,7 +71,16 @@ java -jar target/farmatodo-0.0.1-SNAPSHOT.jar
 | GET    | /carts         | X-API-KEY | Obtener carrito activo       |
 | POST   | /orders        | X-API-KEY | Crear pedido (incluye pago)  |
 
-Todos los endpoints protegidos tienen **rate limiting** (60 req/min por IP por defecto). Exceder el límite devuelve **429 Too Many Requests**.
+---
+
+### Rate limiting
+
+Los endpoints protegidos (`/tokens`, `/clients`, `/products`, `/carts`, `/orders`) aplican **rate limiting por IP** con Bucket4j:
+
+- **Límite por defecto:** 60 peticiones por minuto por IP
+- **Clave:** IP del cliente (`X-Forwarded-For` si existe, si no `RemoteAddr`)
+- **Respuesta 429:** `{"error":"Too many requests. Rate limit exceeded."}`
+- **Variable:** `RATE_LIMIT_REQUESTS_PER_MINUTE` (default 60)
 
 ---
 
@@ -276,6 +295,28 @@ Todos los endpoints protegidos tienen **rate limiting** (60 req/min por IP por d
 - 400: Carrito vacío, token inválido, stock insuficiente, no hay carrito activo
 - 429: Rate limit excedido
 
+---
+
+### Payment y Retry
+
+Al crear un pedido (`POST /orders`), el pago se procesa automáticamente con un **simulador** configurable:
+
+| Aspecto | Configuración |
+|----------|---------------|
+| **Probabilidad de aprobación** | `PAYMENT_APPROVE_PROBABILITY` (0.0–1.0, default 0.7) |
+| **Reintentos** | `PAYMENT_RETRY_MAX_ATTEMPTS` (default 3) |
+| **Delay inicial** | `PAYMENT_RETRY_DELAY` ms (default 1000) |
+| **Multiplicador backoff** | `PAYMENT_RETRY_MULTIPLIER` (default 2) |
+
+**Flujo:**
+1. Orden creada → estado `PAYMENT_PENDING`
+2. Simulador intenta pago (aprueba/rechaza según probabilidad)
+3. Si falla: retry con backoff (delay × multiplier^intento)
+4. Si todos fallan: orden `PAYMENT_FAILED`, email al cliente
+5. Si aprueba: orden `PAID`, descuenta stock, email de confirmación
+
+**Para pruebas:** `PAYMENT_APPROVE_PROBABILITY=0` fuerza fallo y permite ver retry + email.
+
 ## Colección Postman
 
 En `postman/Farmatodo API.postman_collection.json` tienes una colección para probar todos los endpoints. Importarla en Postman y configurar `apiKey` (igual que `APP_API_KEY` en `.env`). Ver `postman/README.md` para el flujo recomendado.
@@ -288,22 +329,38 @@ mvn test
 
 ### Cobertura (JaCoCo)
 
-**Importante:** `docker compose up -d` levanta la app en producción, **no ejecuta tests**. La cobertura se genera únicamente al correr `mvn test`.
+- **Umbral:** 80% líneas cubiertas (el build falla si no se cumple)
+- **Reporte:** `target/site/jacoco/index.html`
 
-**Sin Maven local** (con Docker; excluye tests de integración que requieren Testcontainers):
+**Importante:** `docker compose up -d` levanta la app en producción, **no ejecuta tests**.
+
+| Comando | Uso |
+|--------|-----|
+| `mvn test` | Todos los tests + verificación de cobertura (requiere Docker para integración) |
+| `mvn test -Pno-docker` | Solo tests unitarios (excluye `@Tag("integration")`) |
+| `mvn test -Pno-docker "-Djacoco.check.skip=true"` | Sin fallar si cobertura &lt; 80% |
+
+**Sin Maven local** (con Docker):
 ```powershell
 docker run --rm -v "${PWD}:/app" -w /app maven:3.9-eclipse-temurin-17 mvn test -Pno-docker "-Djacoco.check.skip=true"
 ```
 
-El reporte queda en `target/site/jacoco/index.html`.
+### Tests incluidos
 
-- **`-Pno-docker`**: excluye tests con `@Tag("integration")` (Testcontainers) cuando Docker no está disponible en el contenedor.
-- **`-Djacoco.check.skip=true`**: no falla si la cobertura es &lt; 80%.
-
-Incluye:
-- **TokenServiceTest**: unitario de tokenización y rechazo.
-- **TokenIntegrationTest**: integración con Testcontainers (Postgres), POST /tokens, persistencia y logs.
-- **PaymentIntegrationTest**: flujo completo cliente→token→carrito→pedido con pago fallando; verifica retry, recover, order PAYMENT_FAILED, envío de email y logs (`payment_failed`, `email_sent_payment_failed`).
+| Clase | Tipo | Descripción |
+|-------|------|-------------|
+| CustomerServiceTest, CustomerControllerTest | Unit / WebMvc | Cliente: create, conflictos email/teléfono |
+| ProductServiceTest, ProductControllerTest | Unit / WebMvc | Productos: search, minStock |
+| CartServiceTest, CartControllerTest | Unit / WebMvc | Carrito: addItem, getCart |
+| OrderServiceTest, OrderControllerTest | Unit / WebMvc | Pedidos: createOrderAndCart, toResponse |
+| PaymentServiceTest | Unit | Pago: process, recover, retry |
+| TokenServiceTest, TokenControllerTest | Unit / WebMvc | Tokenización: éxito, rechazo, maskedPan |
+| GlobalExceptionHandlerTest | WebMvc | Excepciones: Token, Order, Cart, Conflict, Validation, 500 |
+| LogServiceTest, EmailServiceTest | Unit | Log y correo |
+| AesEncryptionServiceTest | Unit | Encriptación AES |
+| HealthControllerTest | WebMvc | /ping, /health |
+| TokenIntegrationTest | Integración (@Tag) | Postgres + Testcontainers, POST /tokens |
+| PaymentIntegrationTest | Integración (@Tag) | Flujo completo, retry, email en fallo |
 
 ## Variables de entorno
 
@@ -317,6 +374,9 @@ Incluye:
 | TOKEN_REJECT_PROBABILITY     | No        | 0.0–1.0, default 0.0                              |
 | RATE_LIMIT_REQUESTS_PER_MINUTE | No      | Límite por IP, default 60                         |
 | PAYMENT_APPROVE_PROBABILITY  | No        | 0.0–1.0, default 0.7 (simulador de pago)          |
+| PAYMENT_RETRY_MAX_ATTEMPTS   | No        | Reintentos antes de fallar, default 3              |
+| PAYMENT_RETRY_DELAY          | No        | Delay inicial en ms, default 1000                  |
+| PAYMENT_RETRY_MULTIPLIER     | No        | Multiplicador backoff exponencial, default 2      |
 
 ## Validaciones manuales
 
@@ -325,3 +385,4 @@ Incluye:
 3. **422 rechazo:** `TOKEN_REJECT_PROBABILITY=1` → 422 constante, evento `token_rejected` en `transaction_logs`.
 4. **429 Rate limit:** Exceder 60 peticiones/min al mismo endpoint → 429.
 5. **Health Actuator:** `GET /actuator/health` → status, db, diskSpace, liveness/readiness.
+6. **Payment retry:** Flujo cliente→token→carrito→pedido con `PAYMENT_APPROVE_PROBABILITY=0` → orden `PAYMENT_FAILED`, email recibido en Maildev.
