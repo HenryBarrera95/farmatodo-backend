@@ -3,6 +3,11 @@ spring:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/farmatodo}
     username: ${SPRING_DATASOURCE_USERNAME:farmatodo}
     password: ${SPRING_DATASOURCE_PASSWORD:farmatodo_pwd}
+  mail:
+    host: ${SPRING_MAIL_HOST:localhost}
+    port: ${SPRING_MAIL_PORT:1025}
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
   jpa:
     hibernate:
       ddl-auto: update
@@ -28,11 +33,12 @@ app:
   payment:
     retry-count: ${PAYMENT_RETRY_COUNT:3}
 
+payment:
+  approve-probability: ${PAYMENT_APPROVE_PROBABILITY:0.7}
+  retry:
+    max-attempts: ${PAYMENT_RETRY_MAX_ATTEMPTS:3}
+    delay: ${PAYMENT_RETRY_DELAY:1000}
+    multiplier: ${PAYMENT_RETRY_MULTIPLIER:2}
+
 encryption:
   key: ${ENCRYPTION_KEY:}
-
-mail:
-  host: ${SPRING_MAIL_HOST:localhost}
-  port: ${SPRING_MAIL_PORT:1025}
-  username: ${SPRING_MAIL_USERNAME:}
-  password: ${SPRING_MAIL_PASSWORD:}

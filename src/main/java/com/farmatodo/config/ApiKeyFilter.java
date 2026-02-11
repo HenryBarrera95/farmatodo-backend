@@ -22,7 +22,8 @@ public class ApiKeyFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path = request.getRequestURI();
         return !path.startsWith("/tokens") && !path.startsWith("/clients")
-                && !path.startsWith("/products") && !path.startsWith("/carts");
+                && !path.startsWith("/products") && !path.startsWith("/carts")
+                && !path.startsWith("/orders");
     }
 
     @Override

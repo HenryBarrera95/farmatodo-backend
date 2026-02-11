@@ -44,4 +44,6 @@ public class Product {
     public BigDecimal getPrice() { return price; }
     public int getStock() { return stock; }
     public Instant getCreatedAt() { return createdAt; }
+
+    public void setStock(int stock) { this.stock = stock; }
 }
