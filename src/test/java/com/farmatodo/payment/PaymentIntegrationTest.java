@@ -96,8 +96,7 @@ class PaymentIntegrationTest {
                         .content(tokenRequest))
                 .andExpect(status().isOk())
                 .andReturn();
-        String tokenId = org.springframework.test.util.JsonPathExpectationsHelper.forJsonPath("$.token")
-                .getValue(tokenRes.getResponse().getContentAsString()).toString();
+        String tokenId = JsonPath.read(tokenRes.getResponse().getContentAsString(), "$.token").toString();
 
         UUID productId = productRepo.findAll().get(0).getId();
         String addItemJson = """
