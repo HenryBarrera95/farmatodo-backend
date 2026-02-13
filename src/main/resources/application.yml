@@ -11,6 +11,8 @@ spring:
     port: ${SPRING_MAIL_PORT:1025}
     username: ${SPRING_MAIL_USERNAME:}
     password: ${SPRING_MAIL_PASSWORD:}
+    # Remitente para Resend. Usar onboarding@resend.dev (solo envía a tu email) o notificaciones@tudominio.com si verificaste un dominio.
+    from: ${SPRING_MAIL_FROM:}
     properties:
       mail:
         smtp:

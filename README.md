@@ -485,6 +485,7 @@ docker run --rm -v "${PWD}:/app" -w /app maven:3.9-eclipse-temurin-17 mvn test -
 | SPRING_MAIL_USERNAME         | No        | Usuario SMTP (resend para Resend)                  |
 | SPRING_MAIL_PASSWORD         | No        | API key Resend o vacío para MailDev                |
 | SPRING_MAIL_SSL_ENABLE       | No        | true para Resend (puerto 465)                      |
+| SPRING_MAIL_FROM             | No        | Remitente. `onboarding@resend.dev` (solo a tu email) o `notificaciones@tudominio.com` si verificaste dominio |
 
 ## Validaciones manuales
 
