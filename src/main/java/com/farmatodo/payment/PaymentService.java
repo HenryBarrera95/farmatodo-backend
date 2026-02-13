@@ -6,6 +6,7 @@ import com.farmatodo.config.TxFilter;
 import com.farmatodo.log.LogService;
 import com.farmatodo.mail.EmailService;
 import com.farmatodo.order.Order;
+import com.farmatodo.order.OrderNotFoundException;
 import com.farmatodo.order.OrderRepository;
 import com.farmatodo.product.Product;
 import com.farmatodo.product.ProductRepository;
@@ -65,7 +66,7 @@ public class PaymentService {
     @Transactional
     public void process(UUID orderId) {
         Order order = orderRepo.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("Order not found: " + orderId));
+                .orElseThrow(() -> new OrderNotFoundException(orderId));
 
         if (order.getStatus() != Order.OrderStatus.PAYMENT_PENDING) {
             return;
@@ -123,7 +124,7 @@ public class PaymentService {
         String tx = MDC.get(TxFilter.TX_ID);
         log.warn("All payment retries exhausted for order {} [tx={}]", orderId, tx);
 
-        Order order = orderRepo.findById(orderId).orElseThrow();
+        Order order = orderRepo.findById(orderId).orElseThrow(() -> new OrderNotFoundException(orderId));
         order.setStatus(Order.OrderStatus.PAYMENT_FAILED);
         orderRepo.save(order);
 

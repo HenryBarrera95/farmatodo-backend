@@ -1,9 +1,28 @@
-target/
-.git/
+# Git
+.git
 .gitignore
+
+# IDE
+.idea
+.vscode
+*.iml
+
+# Build (se construye dentro del contenedor)
+target
+build
+*.jar
+
+# Secrets
 .env
 .env.*
+!.env.example
+
+# Docs y tests locales
+docs
 *.md
-docs/
-.idea/
-.vscode/
+!README.md
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore

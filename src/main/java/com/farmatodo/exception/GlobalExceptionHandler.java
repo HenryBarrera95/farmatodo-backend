@@ -2,6 +2,7 @@ package com.farmatodo.exception;
 
 import com.farmatodo.cart.CartException;
 import com.farmatodo.order.OrderException;
+import com.farmatodo.order.OrderNotFoundException;
 import com.farmatodo.client.CustomerConflictException;
 import com.farmatodo.config.TxFilter;
 import com.farmatodo.token.TokenRejectedException;
@@ -37,6 +38,13 @@ public class GlobalExceptionHandler {
         String tx = MDC.get(TxFilter.TX_ID);
         ApiError err = new ApiError(tx, "Token Rejected", ex.getMessage(), Instant.now());
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(err);
+    }
+
+    @ExceptionHandler(OrderNotFoundException.class)
+    public ResponseEntity<ApiError> handleOrderNotFound(OrderNotFoundException ex) {
+        String tx = MDC.get(TxFilter.TX_ID);
+        ApiError err = new ApiError(tx, "Not Found", ex.getMessage(), Instant.now());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(err);
     }
 
     @ExceptionHandler(OrderException.class)

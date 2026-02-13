@@ -47,4 +47,17 @@ class TokenControllerTest {
                 .andExpect(jsonPath("$.token").value(tokenId))
                 .andExpect(jsonPath("$.maskedPan").value("**** **** **** 1111"));
     }
+
+    @Test
+    @DisplayName("POST /tokens con tarjeta vencida retorna 400")
+    void createToken_expiredCard_returns400() throws Exception {
+        mvc.perform(post("/tokens")
+                        .header(TestUtils.API_KEY_HEADER, TestUtils.API_KEY_DEFAULT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"cardNumber":"4111111111111111","cvv":"123","expiryMonth":"01","expiryYear":"2020","cardHolderName":"JOHN"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Validation Failed"));
+    }
 }

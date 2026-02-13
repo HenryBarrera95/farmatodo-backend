@@ -9,6 +9,7 @@ import com.farmatodo.client.CustomerController;
 import com.farmatodo.client.CustomerService;
 import com.farmatodo.order.OrderController;
 import com.farmatodo.order.OrderException;
+import com.farmatodo.order.OrderNotFoundException;
 import com.farmatodo.order.OrderService;
 import com.farmatodo.token.TokenController;
 import com.farmatodo.token.TokenRejectedException;
@@ -24,6 +25,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -65,6 +67,25 @@ class GlobalExceptionHandlerTest {
                     .andExpect(status().isUnprocessableEntity())
                     .andExpect(jsonPath("$.message").value("Token Rejected"))
                     .andExpect(jsonPath("$.detail").value("Rejected"));
+        }
+    }
+
+    @Nested
+    @DisplayName("OrderNotFoundException -> 404")
+    class OrderNotFound {
+        @Test
+        void returnsNotFound() throws Exception {
+            when(orderService.create(any())).thenThrow(new OrderNotFoundException(java.util.UUID.randomUUID()));
+
+            mvc.perform(post("/orders")
+                            .header(TestUtils.API_KEY_HEADER, TestUtils.API_KEY_DEFAULT)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""
+                                    {"customerId":"00000000-0000-0000-0000-000000000001","deliveryAddress":"Addr","token":"tok"}
+                                    """))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.message").value("Not Found"))
+                    .andExpect(jsonPath("$.detail", containsString("Order not found")));
         }
     }
 

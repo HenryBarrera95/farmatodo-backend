@@ -1,5 +1,7 @@
 package com.farmatodo.config;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.Refill;
@@ -14,18 +16,21 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 @Order(2)
 public class RateLimitFilter extends OncePerRequestFilter {
 
+    private static final Duration BUCKET_TTL = Duration.ofMinutes(15);
+
     private final int requestsPerMinute;
-    private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
+    private final Cache<String, Bucket> bucketCache;
 
     public RateLimitFilter(@Value("${app.rate-limit.requests-per-minute:60}") int requestsPerMinute) {
         this.requestsPerMinute = requestsPerMinute;
+        this.bucketCache = Caffeine.newBuilder()
+                .expireAfterAccess(BUCKET_TTL)
+                .build();
     }
 
     @Override
@@ -40,12 +45,13 @@ public class RateLimitFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         String key = resolveClientKey(request);
-        Bucket bucket = buckets.computeIfAbsent(key, k -> createBucket());
+        Bucket bucket = bucketCache.get(key, k -> createBucket());
 
         if (!bucket.tryConsume(1)) {
             response.setStatus(429);
-            response.getWriter().write("{\"error\":\"Too many requests. Rate limit exceeded.\"}");
             response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().write("{\"error\":\"Too many requests. Rate limit exceeded.\"}");
             return;
         }
 

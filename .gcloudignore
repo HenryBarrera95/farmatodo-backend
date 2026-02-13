@@ -1,0 +1,23 @@
+# No subir secrets
+.env
+.env.*
+!.env.example
+
+# Git
+.git
+.gitignore
+
+# Build local
+target
+build
+*.jar
+
+# IDE
+.idea
+.vscode
+*.iml
+
+# Docs
+docs
+*.md
+!README.md

@@ -6,6 +6,7 @@ import com.farmatodo.client.CustomerRepository;
 import com.farmatodo.log.LogService;
 import com.farmatodo.mail.EmailService;
 import com.farmatodo.order.Order;
+import com.farmatodo.order.OrderNotFoundException;
 import com.farmatodo.order.OrderItem;
 import com.farmatodo.order.OrderRepository;
 import com.farmatodo.product.Product;
@@ -96,7 +97,7 @@ class PaymentServiceTest {
         when(orderRepo.findById(orderId)).thenReturn(Optional.empty());
 
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> serviceSuccess.process(orderId))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(OrderNotFoundException.class)
                 .hasMessageContaining("Order not found");
     }
 
