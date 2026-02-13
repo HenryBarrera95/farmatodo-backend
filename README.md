@@ -30,10 +30,14 @@ Sistema de tokenización de tarjetas de crédito con Spring Boot, PostgreSQL y t
          ┌──────────────────────────────────┼──────────────────────────────────┐
          ▼                                  ▼                                  ▼
 ┌─────────────────┐              ┌──────────────────┐              ┌─────────────────┐
-│  JPA Repos      │              │  LogService       │              │  EmailService    │
-│  PostgreSQL     │              │  transaction_logs │              │  Resend SMTP     │
+│  JPA Repos      │              │  LogService      │              │  EmailService   │
+│  PostgreSQL     │              │  transaction_logs│              │  Resend SMTP    │
 └─────────────────┘              └──────────────────┘              └─────────────────┘
 ```
+
+## Arquitectura de infraestructura
+
+![Farmatodo Infrastructure](docs/infrastructure-architecture.png)
 
 ## Decisiones de diseño
 
@@ -56,7 +60,6 @@ Sistema de tokenización de tarjetas de crédito con Spring Boot, PostgreSQL y t
 | Base de datos | Supabase (PostgreSQL) |
 | Email | Resend |
 
-*Nota: Si el alcance no exige deploy real, este stack puede considerarse infraestructura de entrega y no una decisión de diseño del sistema.*
 
 ## Supuestos
 
@@ -491,3 +494,10 @@ docker run --rm -v "${PWD}:/app" -w /app maven:3.9-eclipse-temurin-17 mvn test -
 4. **429 Rate limit:** Exceder 60 peticiones/min al mismo endpoint → 429.
 5. **Health Actuator:** `GET /actuator/health` → status, db, diskSpace, liveness/readiness.
 6. **Payment retry:** Flujo cliente→token→carrito→pedido con `PAYMENT_APPROVE_PROBABILITY=0` → orden `PAYMENT_FAILED`, email recibido en Maildev.
+
+## Documentación adicional
+
+| Documento | Descripción |
+|-----------|-------------|
+| [docs/AI_PROMPTS_SAMPLE.md](docs/AI_PROMPTS_SAMPLE.md) | Muestra de prompts utilizados con IA generativa durante el desarrollo |
+| [docs/infrastructure-architecture.png](docs/infrastructure-architecture.png) | Diagrama de arquitectura de infraestructura (Container / Deployment View) |
