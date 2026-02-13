@@ -499,5 +499,4 @@ docker run --rm -v "${PWD}:/app" -w /app maven:3.9-eclipse-temurin-17 mvn test -
 
 | Documento | Descripción |
 |-----------|-------------|
-| [docs/AI_PROMPTS_SAMPLE.md](docs/AI_PROMPTS_SAMPLE.md) | Muestra de prompts utilizados con IA generativa durante el desarrollo |
-| [docs/infrastructure-architecture.png](docs/infrastructure-architecture.png) | Diagrama de arquitectura de infraestructura (Container / Deployment View) |
+| [docs/infrastructure-architecture.png](docs/infrastructure-architecture.png) | Diagrama de arquitectura de infraestructura (Container / Deployment View) 
